@@ -20,7 +20,7 @@ endif
 
 .PHONY: build
 build: clean
-	go build -o ./bin/${BIN_FILENAME} ./main
+	go build -o ./bin/${BIN_FILENAME} ./cmd
 
 
 .PHONY: execute
