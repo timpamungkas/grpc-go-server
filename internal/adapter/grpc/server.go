@@ -12,7 +12,7 @@ import (
 type Adapter struct {
 	port   int
 	server *grpc.Server
-	pb.UnimplementedHelloServiceServer
+	pb.HelloServiceServer
 }
 
 func NewAdapter(port int) *Adapter {
