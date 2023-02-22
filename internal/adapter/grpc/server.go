@@ -12,7 +12,7 @@ import (
 type Adapter struct {
 	port   int
 	server *grpc.Server
-	pb.HelloServiceServer
+	pb.UnimplementedHelloServiceServer
 }
 
 func NewAdapter(port int) *Adapter {
@@ -34,7 +34,7 @@ func (a Adapter) Run() {
 	grpcServer := grpc.NewServer()
 	a.server = grpcServer
 
-	pb.RegisterHelloServiceServer(grpcServer, a)
+	pb.RegisterHelloServiceServer(grpcServer, &a)
 
 	if err = grpcServer.Serve(listen); err != nil {
 		log.Fatalf("Failed to serve grpc on %d : %v\n", a.port, err)
