@@ -6,41 +6,44 @@ import (
 	"net"
 
 	pb "github.com/timpamungkas/course-grpc-proto/protogen/go/hello"
+	port "github.com/timpamungkas/grpc-go-server/internal/port"
 	"google.golang.org/grpc"
 )
 
 type Adapter struct {
-	port   int
-	server *grpc.Server
+	service  port.ServicePort
+	grpcPort int
+	server   *grpc.Server
 	pb.HelloServiceServer
 }
 
-func NewAdapter(port int) *Adapter {
+func NewAdapter(service port.ServicePort, grpcPort int) *Adapter {
 	return &Adapter{
-		port: port,
+		service:  service,
+		grpcPort: grpcPort,
 	}
 }
 
-func (a Adapter) Run() {
+func (a *Adapter) Run() {
 	var err error
 
-	listen, err := net.Listen("tcp", fmt.Sprintf(":%d", a.port))
+	listen, err := net.Listen("tcp", fmt.Sprintf(":%d", a.grpcPort))
 	if err != nil {
-		log.Fatalf("Failed to listen on port %d : %v\n", a.port, err)
+		log.Fatalf("Failed to listen on port %d : %v\n", a.grpcPort, err)
 	}
 
-	log.Printf("Server listening on %d\n", a.port)
+	log.Printf("Server listening on %d\n", a.grpcPort)
 
 	grpcServer := grpc.NewServer()
 	a.server = grpcServer
 
-	pb.RegisterHelloServiceServer(grpcServer, &a)
+	pb.RegisterHelloServiceServer(grpcServer, a)
 
 	if err = grpcServer.Serve(listen); err != nil {
-		log.Fatalf("Failed to serve grpc on %d : %v\n", a.port, err)
+		log.Fatalf("Failed to serve grpc on %d : %v\n", a.grpcPort, err)
 	}
 }
 
-func (a Adapter) Stop() {
+func (a *Adapter) Stop() {
 	a.server.Stop()
 }
