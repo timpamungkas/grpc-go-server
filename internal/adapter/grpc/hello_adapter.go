@@ -1,4 +1,4 @@
-package coursegrpc
+package grpc
 
 import (
 	"context"
@@ -7,7 +7,7 @@ import (
 )
 
 func (a *Adapter) SayHello(ctx context.Context, in *pb.HelloRequest) (*pb.HelloResponse, error) {
-	greet, err := a.service.GenerateHello(ctx, in.Name)
+	greet, err := a.helloService.GenerateHello(ctx, in.Name)
 
 	if err != nil {
 		return nil, err

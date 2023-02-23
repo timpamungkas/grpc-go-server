@@ -1,4 +1,4 @@
-package coursegrpc
+package grpc
 
 import (
 	"fmt"
@@ -11,16 +11,16 @@ import (
 )
 
 type Adapter struct {
-	service  port.ServicePort
-	grpcPort int
-	server   *grpc.Server
+	helloService port.HelloServicePort
+	grpcPort     int
+	server       *grpc.Server
 	pb.HelloServiceServer
 }
 
-func NewAdapter(service port.ServicePort, grpcPort int) *Adapter {
+func NewAdapter(helloService port.HelloServicePort, grpcPort int) *Adapter {
 	return &Adapter{
-		service:  service,
-		grpcPort: grpcPort,
+		helloService: helloService,
+		grpcPort:     grpcPort,
 	}
 }
 
