@@ -10,7 +10,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-type Adapter struct {
+type GrpcAdapter struct {
 	helloService port.HelloServicePort
 	grpcPort     int
 	server       *grpc.Server
