@@ -17,14 +17,14 @@ type GrpcAdapter struct {
 	pb.HelloServiceServer
 }
 
-func NewAdapter(helloService port.HelloServicePort, grpcPort int) *Adapter {
-	return &Adapter{
+func NewGrpcAdapter(helloService port.HelloServicePort, grpcPort int) *GrpcAdapter {
+	return &GrpcAdapter{
 		helloService: helloService,
 		grpcPort:     grpcPort,
 	}
 }
 
-func (a *Adapter) Run() {
+func (a *GrpcAdapter) Run() {
 	var err error
 
 	listen, err := net.Listen("tcp", fmt.Sprintf(":%d", a.grpcPort))
@@ -44,6 +44,6 @@ func (a *Adapter) Run() {
 	}
 }
 
-func (a *Adapter) Stop() {
+func (a *GrpcAdapter) Stop() {
 	a.server.Stop()
 }

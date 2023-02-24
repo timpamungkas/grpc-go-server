@@ -12,6 +12,6 @@ func main() {
 	log.SetOutput(logWriter{})
 
 	application := app.NewApplication()
-	grpcAdapter := mygrpc.NewAdapter(application, 9090)
+	grpcAdapter := mygrpc.NewGrpcAdapter(application, 9090)
 	grpcAdapter.Run()
 }
