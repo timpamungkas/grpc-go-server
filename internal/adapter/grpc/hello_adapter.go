@@ -7,7 +7,7 @@ import (
 )
 
 func (a *GrpcAdapter) SayHello(ctx context.Context, in *pb.HelloRequest) (*pb.HelloResponse, error) {
-	greet, err := a.helloService.GenerateHello(ctx, in.Name)
+	greet, err := a.helloService.GenerateHello(in.Name)
 
 	if err != nil {
 		return nil, err
