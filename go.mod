@@ -1,17 +1,17 @@
 module github.com/timpamungkas/grpc-go-server
 
-go 1.19
+go 1.20
 
 require (
-	github.com/timpamungkas/course-grpc-proto v0.0.0-20230118050029-47ccbfd55fbd
-	google.golang.org/grpc v1.52.0
+	github.com/timpamungkas/course-grpc-proto v0.0.20
+	google.golang.org/grpc v1.53.0
 )
 
 require (
 	github.com/golang/protobuf v1.5.2 // indirect
-	golang.org/x/net v0.5.0 // indirect
-	golang.org/x/sys v0.4.0 // indirect
-	golang.org/x/text v0.6.0 // indirect
-	google.golang.org/genproto v0.0.0-20230117162540-28d6b9783ac4 // indirect
+	golang.org/x/net v0.7.0 // indirect
+	golang.org/x/sys v0.5.0 // indirect
+	golang.org/x/text v0.7.0 // indirect
+	google.golang.org/genproto v0.0.0-20230227214838-9b19f0bdc514 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
 )

@@ -1,9 +1,8 @@
 package application
 
-import (
-	"context"
-)
+type HelloService struct {
+}
 
-func (a *Application) GenerateHello(ctx context.Context, name string) (string, error) {
-	return "Hello " + name, nil
+func (a *HelloService) GenerateHello(name string) string {
+	return "Hello " + name
 }
