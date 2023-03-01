@@ -1,5 +1,8 @@
 package application
 
-func (a *Application) GenerateHello(name string) (string, error) {
-	return "Hello " + name, nil
+type HelloService struct {
+}
+
+func (a *HelloService) GenerateHello(name string) string {
+	return "Hello " + name
 }
