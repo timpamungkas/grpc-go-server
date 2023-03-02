@@ -22,3 +22,21 @@ func (a *GrpcAdapter) GetCurrentBalance(
 		},
 	}, nil
 }
+
+func (a *GrpcAdapter) FetchExchangeRate(in *bank.ExchangeRateRequest,
+	stream bank.BankService_FetchExchangeRateServer) error {
+	for {
+		rate := a.bankService.FindExchangeRate(in.FromCurrency, in.ToCurrency)
+
+		stream.Send(
+			&bank.ExchangeRateResponse{
+				FromCurrency: in.FromCurrency,
+				ToCurrency:   in.ToCurrency,
+				Rate:         rate,
+				Timestamp:    time.Now().Format(time.RFC3339),
+			},
+		)
+
+		time.Sleep(1 * time.Second)
+	}
+}

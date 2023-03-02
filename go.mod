@@ -3,7 +3,7 @@ module github.com/timpamungkas/grpc-go-server
 go 1.20
 
 require (
-	github.com/timpamungkas/course-grpc-proto v0.0.21
+	github.com/timpamungkas/course-grpc-proto v0.0.23
 	google.golang.org/genproto v0.0.0-20230301171018-9ab4bdc49ad5
 	google.golang.org/grpc v1.53.0
 )
