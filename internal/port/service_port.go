@@ -12,4 +12,5 @@ type BankServicePort interface {
 	FindCurrentBalance(acct string) float64
 	FindExchangeRate(fromCur string, toCur string) float64
 	CalculateTransactionSummary(tcur *dbank.TransactionSummary, trans dbank.Transaction) error
+	Transfer(fromAcct string, toAcct string, amount float64) (bool, error)
 }

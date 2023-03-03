@@ -45,3 +45,7 @@ func (a *BankService) CalculateTransactionSummary(tcur *dbank.TransactionSummary
 
 	return nil
 }
+
+func (a *BankService) Transfer(fromAcct string, toAcct string, amount float64) (bool, error) {
+	return true, nil
+}

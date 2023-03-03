@@ -115,4 +115,57 @@ func toTime(dt *datetime.DateTime) (time.Time, error) {
 	return res, nil
 }
 
-//TransferMultiple(BankService_TransferMultipleServer) error
+func (a *GrpcAdapter) TransferMultiple(stream bank.BankService_TransferMultipleServer) error {
+	for {
+		req, err := stream.Recv()
+
+		if err == io.EOF {
+			return nil
+		}
+
+		if err != nil {
+			log.Fatalf("Error while reading from client : %v", err)
+		}
+
+		status, err := a.bankService.Transfer(req.FromAccountNumber, req.ToAccountNumber, req.Amount)
+
+		if err != nil {
+			return err
+		}
+
+		res := bank.TransferResponse{
+			FromAccountNumber: req.FromAccountNumber,
+			ToAccountNumber:   req.ToAccountNumber,
+			Amount:            req.Amount,
+			Timestamp:         currentDatetime(),
+		}
+
+		if status {
+			res.Status = bank.TransferStatus_TRANSFER_STATUS_SUCCESS
+		} else {
+			res.Status = bank.TransferStatus_TRANSFER_STATUS_FAILED
+		}
+
+		err = stream.Send(&res)
+
+		if err != nil {
+			log.Fatalf("Error while sending response to client : %v", err)
+		}
+	}
+
+}
+
+func currentDatetime() *datetime.DateTime {
+	now := time.Now()
+
+	return &datetime.DateTime{
+		Year:       int32(now.Year()),
+		Month:      int32(now.Month()),
+		Day:        int32(now.Day()),
+		Hours:      int32(now.Hour()),
+		Minutes:    int32(now.Minute()),
+		Seconds:    int32(now.Second()),
+		Nanos:      int32(now.Second()),
+		TimeOffset: &datetime.DateTime_UtcOffset{},
+	}
+}
