@@ -1,6 +1,11 @@
 package application
 
-import "time"
+import (
+	"errors"
+	"time"
+
+	dbank "github.com/timpamungkas/grpc-go-server/internal/application/domain/bank"
+)
 
 var accounts map[string]float64
 
@@ -24,4 +29,19 @@ func (a *BankService) FindExchangeRate(fromCur string, toCur string) float64 {
 	bal := 1000 + now.Minute() + now.Second()
 
 	return float64(bal)
+}
+
+func (a *BankService) CalculateTransactionSummary(tcur *dbank.TransactionSummary, tnew dbank.Transaction) error {
+	switch tnew.TransactionType {
+	case dbank.In:
+		tcur.SumIn += tnew.Amount
+	case dbank.Out:
+		tcur.SumOut += tnew.Amount
+	default:
+		return errors.New("unknown transaction type")
+	}
+
+	tcur.SumTotal = tcur.SumIn - tcur.SumOut
+
+	return nil
 }
