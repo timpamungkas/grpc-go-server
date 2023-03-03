@@ -5,9 +5,9 @@ import (
 	"log"
 	"net"
 
-	"github.com/timpamungkas/course-grpc-proto/protogen/go/bank"
-	"github.com/timpamungkas/course-grpc-proto/protogen/go/hello"
 	"github.com/timpamungkas/grpc-go-server/internal/port"
+	"github.com/timpamungkas/grpc-proto/protogen/go/bank"
+	"github.com/timpamungkas/grpc-proto/protogen/go/hello"
 	"google.golang.org/grpc"
 )
 
