@@ -7,7 +7,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/timpamungkas/course-grpc-proto/protogen/go/hello"
+	"github.com/timpamungkas/grpc-proto/protogen/go/hello"
 )
 
 func (a *GrpcAdapter) SayHello(ctx context.Context, in *hello.HelloRequest) (*hello.HelloResponse, error) {

@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/timpamungkas/course-grpc-proto/protogen/go/bank"
+	"github.com/timpamungkas/grpc-proto/protogen/go/bank"
 	"google.golang.org/genproto/googleapis/type/date"
 )
 

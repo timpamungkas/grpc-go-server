@@ -5,6 +5,6 @@ type HelloServicePort interface {
 }
 
 type BankServicePort interface {
-	FindCurrentBalance(acct string) int32
-	FindExchangeRate(fromCur string, toCur string) float32
+	FindCurrentBalance(acct string) float64
+	FindExchangeRate(fromCur string, toCur string) float64
 }
