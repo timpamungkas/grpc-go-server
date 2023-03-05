@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"log"
 
+	"github.com/google/uuid"
 	dbmigration "github.com/timpamungkas/grpc-go-server/db"
 	mydb "github.com/timpamungkas/grpc-go-server/internal/adapter/database"
 	mygrpc "github.com/timpamungkas/grpc-go-server/internal/adapter/grpc"
@@ -35,6 +36,11 @@ func main() {
 			UserName: "Tim",
 		},
 	)
+
+	uuid, _ := uuid.Parse("555d2658-bdd2-4882-b4a9-7a5d1b70beec")
+	res, _ := databaseAdapter.GetByUuid(&uuid)
+
+	log.Println("res : ", res)
 
 	hs := new(app.HelloService)
 	bs := application.NewBankService(databaseAdapter)
