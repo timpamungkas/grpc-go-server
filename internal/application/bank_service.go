@@ -6,17 +6,16 @@ import (
 	"time"
 
 	dbank "github.com/timpamungkas/grpc-go-server/internal/application/domain/bank"
-	"github.com/timpamungkas/grpc-go-server/internal/application/domain/dummy"
 	"github.com/timpamungkas/grpc-go-server/internal/port"
 )
 
 var accounts map[string]float64
 
 type BankService struct {
-	db port.DummyDatabasePort
+	db port.BankDatabasePort
 }
 
-func NewBankService(dbPort port.DummyDatabasePort) *BankService {
+func NewBankService(dbPort port.BankDatabasePort) *BankService {
 	return &BankService{
 		db: dbPort,
 	}
@@ -31,14 +30,13 @@ func init() {
 }
 
 func (b *BankService) FindCurrentBalance(acct string) float64 {
-	d := dummy.Dummy{
-		UserName: acct,
+	bankAccount, err := b.db.GetBankAccountByAccountNumber(acct, false)
+
+	if err != nil {
+		log.Printf("Error on FindCurrentBalance : %v\n", err)
 	}
-	uuid, _ := b.db.Save(&d)
 
-	log.Println(uuid)
-
-	return accounts[acct]
+	return bankAccount.CurrentBalance
 }
 
 func (b *BankService) FindExchangeRate(fromCur string, toCur string) float64 {

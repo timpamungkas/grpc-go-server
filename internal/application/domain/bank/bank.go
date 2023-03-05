@@ -1,4 +1,4 @@
-package domainbank
+package bank
 
 import "time"
 
@@ -11,6 +11,7 @@ const (
 type Account struct {
 	AccountNumber  string
 	AccountName    string
+	Currency       string
 	CurrentBalance float64
 	Transactions   []Transaction
 }

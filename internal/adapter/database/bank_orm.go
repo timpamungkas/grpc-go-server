@@ -6,7 +6,7 @@ import (
 	"github.com/google/uuid"
 )
 
-type BankAccount struct {
+type BankAccountOrm struct {
 	AccountUuid    uuid.UUID `gorm:"primaryKey"`
 	AccountNumber  string
 	AccountName    string
@@ -16,6 +16,6 @@ type BankAccount struct {
 	UpdatedAt      time.Time
 }
 
-func (BankAccount) TableName() string {
+func (BankAccountOrm) TableName() string {
 	return "bank_accounts"
 }
