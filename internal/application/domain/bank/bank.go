@@ -19,6 +19,7 @@ type Transaction struct {
 	Amount          float64
 	Timestamp       time.Time
 	TransactionType int32
+	Notes           string
 }
 
 type TransactionSummary struct {
@@ -26,4 +27,11 @@ type TransactionSummary struct {
 	SumIn         float64
 	SumOut        float64
 	SumTotal      float64
+}
+
+type TransferRequest struct {
+	FromAccountNumber string
+	ToAccountNumber   string
+	Currency          string
+	Amount            float64
 }
