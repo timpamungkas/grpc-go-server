@@ -34,13 +34,15 @@ func (a *DatabaseAdapter) Save(data *domain.Dummy) (uuid.UUID, error) {
 
 func (a *DatabaseAdapter) GetByUuid(uuid *uuid.UUID) (domain.Dummy, error) {
 	var dummyOrm DummyOrm
+	var res domain.Dummy
 
-	gormResult := a.db.Find(&dummyOrm, "user_id = ?", uuid)
+	err := a.db.First(&dummyOrm, "user_id = ?", uuid).Error
 
-	res := domain.Dummy{
+	res = domain.Dummy{
 		UserId:   dummyOrm.UserId,
 		UserName: dummyOrm.UserName,
 	}
 
-	return res, gormResult.Error
+	return res, err
+
 }

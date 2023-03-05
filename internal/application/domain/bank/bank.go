@@ -8,6 +8,13 @@ const (
 	Out     int32 = -1
 )
 
+type Account struct {
+	AccountNumber  string
+	AccountName    string
+	CurrentBalance float64
+	Transactions   []Transaction
+}
+
 type Transaction struct {
 	Amount          float64
 	Timestamp       time.Time
