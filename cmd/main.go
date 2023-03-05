@@ -7,8 +7,8 @@ import (
 	dbmigration "github.com/timpamungkas/grpc-go-server/db"
 	mydb "github.com/timpamungkas/grpc-go-server/internal/adapter/database"
 	mygrpc "github.com/timpamungkas/grpc-go-server/internal/adapter/grpc"
+	"github.com/timpamungkas/grpc-go-server/internal/application"
 	app "github.com/timpamungkas/grpc-go-server/internal/application"
-	"github.com/timpamungkas/grpc-go-server/internal/application/domain/dummy"
 )
 
 func main() {
@@ -29,14 +29,14 @@ func main() {
 		log.Fatalf("Can't create database adapter : %v\n", err)
 	}
 
-	databaseAdapter.Save(
-		&dummy.Dummy{
-			UserName: "Zoe",
-		},
-	)
+	// databaseAdapter.Save(
+	// 	&dummy.Dummy{
+	// 		UserName: "Zoe",
+	// 	},
+	// )
 
 	hs := new(app.HelloService)
-	bs := new(app.BankService)
+	bs := application.NewBankService(databaseAdapter)
 	grpcAdapter := mygrpc.NewGrpcAdapter(hs, bs, 9090)
 	grpcAdapter.Run()
 }

@@ -2,14 +2,24 @@ package application
 
 import (
 	"errors"
+	"log"
 	"time"
 
 	dbank "github.com/timpamungkas/grpc-go-server/internal/application/domain/bank"
+	"github.com/timpamungkas/grpc-go-server/internal/application/domain/dummy"
+	"github.com/timpamungkas/grpc-go-server/internal/port"
 )
 
 var accounts map[string]float64
 
 type BankService struct {
+	db port.DummyDatabasePort
+}
+
+func NewBankService(dbPort port.DummyDatabasePort) *BankService {
+	return &BankService{
+		db: dbPort,
+	}
 }
 
 func init() {
@@ -20,18 +30,25 @@ func init() {
 	}
 }
 
-func (a *BankService) FindCurrentBalance(acct string) float64 {
+func (b *BankService) FindCurrentBalance(acct string) float64 {
+	d := dummy.Dummy{
+		UserName: acct,
+	}
+	uuid, _ := b.db.Save(&d)
+
+	log.Println(uuid)
+
 	return accounts[acct]
 }
 
-func (a *BankService) FindExchangeRate(fromCur string, toCur string) float64 {
+func (b *BankService) FindExchangeRate(fromCur string, toCur string) float64 {
 	now := time.Now()
 	bal := 1000 + now.Minute() + now.Second()
 
 	return float64(bal)
 }
 
-func (a *BankService) CalculateTransactionSummary(tcur *dbank.TransactionSummary, tnew dbank.Transaction) error {
+func (b *BankService) CalculateTransactionSummary(tcur *dbank.TransactionSummary, tnew dbank.Transaction) error {
 	switch tnew.TransactionType {
 	case dbank.In:
 		tcur.SumIn += tnew.Amount
@@ -46,6 +63,6 @@ func (a *BankService) CalculateTransactionSummary(tcur *dbank.TransactionSummary
 	return nil
 }
 
-func (a *BankService) Transfer(fromAcct string, toAcct string, amount float64) (bool, error) {
+func (b *BankService) Transfer(fromAcct string, toAcct string, amount float64) (bool, error) {
 	return true, nil
 }
