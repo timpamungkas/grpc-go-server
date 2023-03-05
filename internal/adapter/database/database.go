@@ -27,5 +27,7 @@ func NewDatabaseAdapter(conn *sql.DB) (*DatabaseAdapter, error) {
 		return nil, fmt.Errorf("database migration error: %v", err)
 	}
 
-	return &DatabaseAdapter{db: db}, nil
+	return &DatabaseAdapter{
+		db: db,
+	}, nil
 }

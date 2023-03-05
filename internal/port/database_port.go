@@ -7,4 +7,5 @@ import (
 
 type DummyDatabasePort interface {
 	Save(data *ddummy.Dummy) (uuid.UUID, error)
+	GetByUuid(uuid *uuid.UUID) (ddummy.Dummy, error)
 }

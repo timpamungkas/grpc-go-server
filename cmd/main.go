@@ -9,6 +9,7 @@ import (
 	mygrpc "github.com/timpamungkas/grpc-go-server/internal/adapter/grpc"
 	"github.com/timpamungkas/grpc-go-server/internal/application"
 	app "github.com/timpamungkas/grpc-go-server/internal/application"
+	"github.com/timpamungkas/grpc-go-server/internal/application/domain/dummy"
 )
 
 func main() {
@@ -29,11 +30,11 @@ func main() {
 		log.Fatalf("Can't create database adapter : %v\n", err)
 	}
 
-	// databaseAdapter.Save(
-	// 	&dummy.Dummy{
-	// 		UserName: "Zoe",
-	// 	},
-	// )
+	databaseAdapter.Save(
+		&dummy.Dummy{
+			UserName: "Tim",
+		},
+	)
 
 	hs := new(app.HelloService)
 	bs := application.NewBankService(databaseAdapter)
