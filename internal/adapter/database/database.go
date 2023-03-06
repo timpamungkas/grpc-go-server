@@ -21,12 +21,6 @@ func NewDatabaseAdapter(conn *sql.DB) (*DatabaseAdapter, error) {
 		return nil, fmt.Errorf("can't connect database : %v", err)
 	}
 
-	err = db.AutoMigrate(&DummyOrm{})
-
-	if err != nil {
-		return nil, fmt.Errorf("database migration error: %v", err)
-	}
-
 	return &DatabaseAdapter{
 		db: db,
 	}, nil

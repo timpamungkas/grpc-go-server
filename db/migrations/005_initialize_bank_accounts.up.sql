@@ -1,3 +1,7 @@
+DELETE FROM bank_transactions;
+
+DELETE FROM bank_accounts;
+
 INSERT
 	INTO
 	bank_accounts (account_uuid,

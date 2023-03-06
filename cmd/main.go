@@ -3,13 +3,15 @@ package main
 import (
 	"database/sql"
 	"log"
+	"math/rand"
 	"time"
 
 	dbmigration "github.com/timpamungkas/grpc-go-server/db"
 	mydb "github.com/timpamungkas/grpc-go-server/internal/adapter/database"
 	mygrpc "github.com/timpamungkas/grpc-go-server/internal/adapter/grpc"
 	app "github.com/timpamungkas/grpc-go-server/internal/application"
-	"github.com/timpamungkas/grpc-go-server/internal/application/domain/dummy"
+	dbank "github.com/timpamungkas/grpc-go-server/internal/application/domain/bank"
+	ddummy "github.com/timpamungkas/grpc-go-server/internal/application/domain/dummy"
 )
 
 func main() {
@@ -32,6 +34,8 @@ func main() {
 
 	// runDummyOrm(databaseAdapter)
 
+	go generateExchangeRates(databaseAdapter, "USD", "IDR", 5*time.Second)
+
 	hs := new(app.HelloService)
 	bs := app.NewBankService(databaseAdapter)
 	grpcAdapter := mygrpc.NewGrpcAdapter(hs, bs, 9090)
@@ -40,7 +44,7 @@ func main() {
 
 func runDummyOrm(da *mydb.DatabaseAdapter) {
 	uuid, _ := da.Save(
-		&dummy.Dummy{
+		&ddummy.Dummy{
 			UserName: "Tim " + time.Now().Format("15:04:05"),
 		},
 	)
@@ -48,4 +52,25 @@ func runDummyOrm(da *mydb.DatabaseAdapter) {
 	res, _ := da.GetByUuid(&uuid)
 	log.Println("res : ", res)
 
+}
+
+func generateExchangeRates(da *mydb.DatabaseAdapter,
+	fromCurrency string, toCurrency string, duration time.Duration) {
+	ticker := time.NewTicker(duration)
+
+	for range ticker.C {
+		now := time.Now()
+		validFrom := now.Truncate(time.Second)
+		validTo := validFrom.Add(duration).Add(-1 * time.Millisecond)
+
+		dummyRate := dbank.ExchangeRate{
+			FromCurrency:       fromCurrency,
+			ToCurrency:         toCurrency,
+			ValidFromTimestamp: validFrom,
+			ValidToTimestamp:   validTo,
+			Rate:               2000 + float64(rand.Intn(300)),
+		}
+
+		da.CreateExchangeRate(dummyRate)
+	}
 }

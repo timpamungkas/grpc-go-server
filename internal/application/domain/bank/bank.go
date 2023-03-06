@@ -23,6 +23,14 @@ type Transaction struct {
 	Notes           string
 }
 
+type ExchangeRate struct {
+	FromCurrency       string
+	ToCurrency         string
+	Rate               float64
+	ValidFromTimestamp time.Time
+	ValidToTimestamp   time.Time
+}
+
 type TransactionSummary struct {
 	SummaryOnDate time.Time
 	SumIn         float64

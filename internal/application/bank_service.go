@@ -39,11 +39,14 @@ func (b *BankService) FindCurrentBalance(acct string) float64 {
 	return bankAccount.CurrentBalance
 }
 
-func (b *BankService) FindExchangeRate(fromCur string, toCur string) float64 {
-	now := time.Now()
-	bal := 1000 + now.Minute() + now.Second()
+func (b *BankService) FindExchangeRate(fromCur string, toCur string, ts time.Time) float64 {
+	rate, err := b.db.GetExchangeRateAtTimestamp(fromCur, toCur, ts)
 
-	return float64(bal)
+	if err != nil {
+		return 0
+	}
+
+	return float64(rate)
 }
 
 func (b *BankService) CalculateTransactionSummary(tcur *dbank.TransactionSummary, tnew dbank.Transaction) error {
