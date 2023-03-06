@@ -91,22 +91,11 @@ func (b *BankService) CreateTransaction(acct string, t dbank.Transaction) (uuid.
 		UpdatedAt:            now,
 	}
 
-	savedUuid, err := b.db.CreateTransaction(transactionOrm)
+	savedUuid, err := b.db.CreateTransaction(bankAccountOrm, transactionOrm)
 
 	if err != nil {
 		return savedUuid, err
 	}
-
-	// recalculate current balance
-	newAmount := t.Amount
-
-	if t.TransactionType == dbank.Out {
-		newAmount = -1 * t.Amount
-	}
-
-	newAccountBalance := bankAccountOrm.CurrentBalance + newAmount
-
-	b.db.UpdateCurrentBalance(bankAccountOrm, newAccountBalance)
 
 	return savedUuid, nil
 }

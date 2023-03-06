@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	dbank "github.com/timpamungkas/grpc-go-server/internal/application/domain/bank"
 )
 
 func (a *DatabaseAdapter) GetBankAccountByAccountNumber(
@@ -50,19 +51,34 @@ func (a *DatabaseAdapter) GetExchangeRateAtTimestamp(fromCur string, toCur strin
 	return exchangeRateOrm.Rate, err
 }
 
-func (a *DatabaseAdapter) CreateTransaction(t BankTransactionOrm) (uuid.UUID, error) {
-	if err := a.db.Create(t).Error; err != nil {
+func (a *DatabaseAdapter) CreateTransaction(acct BankAccountOrm, t BankTransactionOrm) (uuid.UUID, error) {
+	tx := a.db.Begin()
+
+	if err := tx.Create(t).Error; err != nil {
+		tx.Rollback()
 		return uuid.Nil, err
 	}
 
-	return t.TransactionUuid, nil
-}
+	// recalculate current balance
+	newAmount := t.Amount
 
-func (a *DatabaseAdapter) UpdateCurrentBalance(acct BankAccountOrm, newBalance float64) error {
-	return a.db.Model(&acct).Updates(
+	if t.TransactionType == dbank.Out {
+		newAmount = -1 * t.Amount
+	}
+
+	newAccountBalance := acct.CurrentBalance + newAmount
+
+	if err := tx.Model(&acct).Updates(
 		map[string]interface{}{
-			"current_balance": newBalance,
+			"current_balance": newAccountBalance,
 			"updated_at":      time.Now(),
 		},
-	).Error
+	).Error; err != nil {
+		tx.Rollback()
+		return uuid.Nil, err
+	}
+
+	tx.Commit()
+
+	return t.TransactionUuid, nil
 }
