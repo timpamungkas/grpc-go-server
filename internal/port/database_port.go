@@ -1,11 +1,21 @@
 package port
 
 import (
+	"time"
+
 	"github.com/google/uuid"
-	ddummy "github.com/timpamungkas/grpc-go-server/internal/application/domain/dummy"
+	db "github.com/timpamungkas/grpc-go-server/internal/adapter/database"
 )
 
 type DummyDatabasePort interface {
-	Save(data *ddummy.Dummy) (uuid.UUID, error)
-	GetByUuid(uuid *uuid.UUID) (ddummy.Dummy, error)
+	Save(data *db.DummyOrm) (uuid.UUID, error)
+	GetByUuid(uuid *uuid.UUID) (db.DummyOrm, error)
+}
+
+type BankDatabasePort interface {
+	GetBankAccountByAccountNumber(acct string, withTransactions bool,
+		transactionFrom time.Time, transactionTo time.Time) (db.BankAccountOrm, error)
+	CreateExchangeRate(r db.BankExchangeRateOrm) (uuid.UUID, error)
+	GetExchangeRateAtTimestamp(fromCur string, toCur string, ts time.Time) (float64, error)
+	CreateTransaction(acct db.BankAccountOrm, t db.BankTransactionOrm) (uuid.UUID, error)
 }

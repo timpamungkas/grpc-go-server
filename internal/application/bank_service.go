@@ -1,22 +1,23 @@
 package application
 
 import (
-	"errors"
+	"fmt"
 	"log"
 	"time"
 
+	"github.com/google/uuid"
+	db "github.com/timpamungkas/grpc-go-server/internal/adapter/database"
 	dbank "github.com/timpamungkas/grpc-go-server/internal/application/domain/bank"
-	"github.com/timpamungkas/grpc-go-server/internal/application/domain/dummy"
 	"github.com/timpamungkas/grpc-go-server/internal/port"
 )
 
 var accounts map[string]float64
 
 type BankService struct {
-	db port.DummyDatabasePort
+	db port.BankDatabasePort
 }
 
-func NewBankService(dbPort port.DummyDatabasePort) *BankService {
+func NewBankService(dbPort port.BankDatabasePort) *BankService {
 	return &BankService{
 		db: dbPort,
 	}
@@ -31,21 +32,72 @@ func init() {
 }
 
 func (b *BankService) FindCurrentBalance(acct string) float64 {
-	d := dummy.Dummy{
-		UserName: acct,
+	bankAccount, err := b.db.GetBankAccountByAccountNumber(acct, false, time.Now(), time.Now())
+
+	if err != nil {
+		log.Printf("Error on FindCurrentBalance : %v\n", err)
 	}
-	uuid, _ := b.db.Save(&d)
 
-	log.Println(uuid)
-
-	return accounts[acct]
+	return bankAccount.CurrentBalance
 }
 
-func (b *BankService) FindExchangeRate(fromCur string, toCur string) float64 {
+func (b *BankService) CreateExchangeRate(r dbank.ExchangeRate) (uuid.UUID, error) {
+	newUuid := uuid.New()
 	now := time.Now()
-	bal := 1000 + now.Minute() + now.Second()
 
-	return float64(bal)
+	exchangeRateOrm := db.BankExchangeRateOrm{
+		ExchangeRateUuid:   newUuid,
+		FromCurrency:       r.FromCurrency,
+		ToCurrency:         r.ToCurrency,
+		Rate:               r.Rate,
+		ValidFromTimestamp: r.ValidFromTimestamp,
+		ValidToTimestamp:   r.ValidToTimestamp,
+		CreatedAt:          now,
+		UpdatedAt:          now,
+	}
+
+	return b.db.CreateExchangeRate(exchangeRateOrm)
+}
+
+func (b *BankService) FindExchangeRate(fromCur string, toCur string, ts time.Time) float64 {
+	rate, err := b.db.GetExchangeRateAtTimestamp(fromCur, toCur, ts)
+
+	if err != nil {
+		return 0
+	}
+
+	return float64(rate)
+}
+
+func (b *BankService) CreateTransaction(acct string, t dbank.Transaction) (uuid.UUID, error) {
+	newUuid := uuid.New()
+	now := time.Now()
+
+	bankAccountOrm, err := b.db.GetBankAccountByAccountNumber(acct, false, time.Now(), time.Now())
+
+	if err != nil {
+		log.Printf("Can't create transaction for %v : %v", acct, err)
+		return uuid.Nil, err
+	}
+
+	transactionOrm := db.BankTransactionOrm{
+		TransactionUuid:      newUuid,
+		AccountUuid:          bankAccountOrm.AccountUuid,
+		TransactionTimestamp: now,
+		Amount:               t.Amount,
+		TransactionType:      t.TransactionType,
+		Notes:                t.Notes,
+		CreatedAt:            now,
+		UpdatedAt:            now,
+	}
+
+	savedUuid, err := b.db.CreateTransaction(bankAccountOrm, transactionOrm)
+
+	if err != nil {
+		return savedUuid, err
+	}
+
+	return savedUuid, nil
 }
 
 func (b *BankService) CalculateTransactionSummary(tcur *dbank.TransactionSummary, tnew dbank.Transaction) error {
@@ -55,7 +107,7 @@ func (b *BankService) CalculateTransactionSummary(tcur *dbank.TransactionSummary
 	case dbank.Out:
 		tcur.SumOut += tnew.Amount
 	default:
-		return errors.New("unknown transaction type")
+		return fmt.Errorf("unknown transaction type : %v", tnew.TransactionType)
 	}
 
 	tcur.SumTotal = tcur.SumIn - tcur.SumOut

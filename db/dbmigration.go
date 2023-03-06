@@ -20,7 +20,8 @@ func Migrate(conn *sql.DB) {
 		log.Fatalf("Database migration failed : %v\n", err)
 	}
 
-	m.Steps(1)
+	m.Down()
+	m.Up()
 
 	log.Println("Database migration end")
 }
