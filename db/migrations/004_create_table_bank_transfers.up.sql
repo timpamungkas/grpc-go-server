@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS bank_transfers(
     currency                VARCHAR(5)      NOT NULL,
     amount                  NUMERIC(15,2)   NOT NULL,
     transfer_timestamp      TIMESTAMPTZ     NOT NULL,
-    transfer_status         VARCHAR(20)     NOT NULL DEFAULT 'UNKNOWN',
+    transfer_success        BOOLEAN         NOT NULL DEFAULT FALSE,
     created_at 			    TIMESTAMPTZ,
     updated_at 			    TIMESTAMPTZ
 );
