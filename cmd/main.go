@@ -6,12 +6,12 @@ import (
 	"math/rand"
 	"time"
 
+	"github.com/google/uuid"
 	dbmigration "github.com/timpamungkas/grpc-go-server/db"
 	mydb "github.com/timpamungkas/grpc-go-server/internal/adapter/database"
 	mygrpc "github.com/timpamungkas/grpc-go-server/internal/adapter/grpc"
 	app "github.com/timpamungkas/grpc-go-server/internal/application"
-	dbank "github.com/timpamungkas/grpc-go-server/internal/application/domain/bank"
-	ddummy "github.com/timpamungkas/grpc-go-server/internal/application/domain/dummy"
+	"github.com/timpamungkas/grpc-go-server/internal/application/domain/bank"
 )
 
 func main() {
@@ -32,20 +32,26 @@ func main() {
 		log.Fatalf("Can't create database adapter : %v\n", err)
 	}
 
-	// runDummyOrm(databaseAdapter)
-
-	go generateExchangeRates(databaseAdapter, "USD", "IDR", 5*time.Second)
+	runDummyOrm(databaseAdapter)
 
 	hs := new(app.HelloService)
 	bs := app.NewBankService(databaseAdapter)
+
+	go generateExchangeRates(bs, "USD", "IDR", 5*time.Second)
+
 	grpcAdapter := mygrpc.NewGrpcAdapter(hs, bs, 9090)
 	grpcAdapter.Run()
 }
 
 func runDummyOrm(da *mydb.DatabaseAdapter) {
+	now := time.Now()
+
 	uuid, _ := da.Save(
-		&ddummy.Dummy{
-			UserName: "Tim " + time.Now().Format("15:04:05"),
+		&mydb.DummyOrm{
+			UserId:    uuid.New(),
+			UserName:  "Tim " + time.Now().Format("15:04:05"),
+			CreatedAt: now,
+			UpdatedAt: now,
 		},
 	)
 
@@ -54,7 +60,7 @@ func runDummyOrm(da *mydb.DatabaseAdapter) {
 
 }
 
-func generateExchangeRates(da *mydb.DatabaseAdapter,
+func generateExchangeRates(bs *app.BankService,
 	fromCurrency string, toCurrency string, duration time.Duration) {
 	ticker := time.NewTicker(duration)
 
@@ -63,7 +69,7 @@ func generateExchangeRates(da *mydb.DatabaseAdapter,
 		validFrom := now.Truncate(time.Second)
 		validTo := validFrom.Add(duration).Add(-1 * time.Millisecond)
 
-		dummyRate := dbank.ExchangeRate{
+		dummyRate := bank.ExchangeRate{
 			FromCurrency:       fromCurrency,
 			ToCurrency:         toCurrency,
 			ValidFromTimestamp: validFrom,
@@ -71,6 +77,6 @@ func generateExchangeRates(da *mydb.DatabaseAdapter,
 			Rate:               2000 + float64(rand.Intn(300)),
 		}
 
-		da.CreateExchangeRate(dummyRate)
+		bs.CreateExchangeRate(dummyRate)
 	}
 }

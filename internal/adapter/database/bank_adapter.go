@@ -1,48 +1,42 @@
 package database
 
 import (
+	"log"
 	"time"
 
 	"github.com/google/uuid"
-	dbank "github.com/timpamungkas/grpc-go-server/internal/application/domain/bank"
 )
 
-func (a *DatabaseAdapter) GetBankAccountByAccountNumber(acct string, withTransactions bool) (dbank.Account, error) {
+func (a *DatabaseAdapter) GetBankAccountByAccountNumber(
+	acct string, withTransactions bool, transactionFrom time.Time,
+	transactionTo time.Time) (BankAccountOrm, error) {
 	var bankAccountOrm BankAccountOrm
-	var res dbank.Account
 
-	err := a.db.First(&bankAccountOrm, "account_number = ?", acct).Error
-
-	res = dbank.Account{
-		AccountNumber:  bankAccountOrm.AccountNumber,
-		AccountName:    bankAccountOrm.AccountName,
-		Currency:       bankAccountOrm.Currency,
-		CurrentBalance: bankAccountOrm.CurrentBalance,
+	if err := a.db.First(&bankAccountOrm, "account_number = ?", acct).Error; err != nil {
+		log.Printf("Can't find bank account %v : %v", acct, err)
+		return bankAccountOrm, err
 	}
 
-	return res, err
+	if withTransactions {
+		var txOrm []BankTransactionOrm
+
+		a.db.Order("transaction_timestamp DESC").
+			Find(&txOrm, "account_uuid = ? "+
+				" AND transaction_timestamp BETWEEN ? AND ?",
+				bankAccountOrm.AccountUuid, transactionFrom, transactionTo)
+
+		bankAccountOrm.Transactions = append(bankAccountOrm.Transactions, txOrm...)
+	}
+
+	return bankAccountOrm, nil
 }
 
-func (a *DatabaseAdapter) CreateExchangeRate(r dbank.ExchangeRate) (uuid.UUID, error) {
-	newUuid := uuid.New()
-	now := time.Now()
-
-	dummyRate := BankExchangeRateOrm{
-		ExchangeRateUuid:   newUuid,
-		FromCurrency:       r.FromCurrency,
-		ToCurrency:         r.ToCurrency,
-		ValidFromTimestamp: r.ValidFromTimestamp,
-		ValidToTimestamp:   r.ValidToTimestamp,
-		Rate:               r.Rate,
-		CreatedAt:          now,
-		UpdatedAt:          now,
-	}
-
-	if err := a.db.Create(dummyRate).Error; err != nil {
+func (a *DatabaseAdapter) CreateExchangeRate(r BankExchangeRateOrm) (uuid.UUID, error) {
+	if err := a.db.Create(r).Error; err != nil {
 		return uuid.Nil, err
 	}
 
-	return newUuid, nil
+	return r.ExchangeRateUuid, nil
 }
 
 func (a *DatabaseAdapter) GetExchangeRateAtTimestamp(fromCur string, toCur string, ts time.Time) (float64, error) {
@@ -54,4 +48,12 @@ func (a *DatabaseAdapter) GetExchangeRateAtTimestamp(fromCur string, toCur strin
 		fromCur, toCur, ts).Error
 
 	return exchangeRateOrm.Rate, err
+}
+
+func (a *DatabaseAdapter) CreateTransaction(t BankTransactionOrm) (uuid.UUID, error) {
+	if err := a.db.Create(t).Error; err != nil {
+		return uuid.Nil, err
+	}
+
+	return t.TransactionUuid, nil
 }

@@ -3,9 +3,9 @@ package bank
 import "time"
 
 const (
-	Unknown int32 = 0
-	In      int32 = 1
-	Out     int32 = -1
+	Unknown string = "UNKNOWN"
+	In      string = "IN"
+	Out     string = "OUT"
 )
 
 type Account struct {
@@ -19,7 +19,7 @@ type Account struct {
 type Transaction struct {
 	Amount          float64
 	Timestamp       time.Time
-	TransactionType int32
+	TransactionType string
 	Notes           string
 }
 

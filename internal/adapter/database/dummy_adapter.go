@@ -2,47 +2,27 @@ package database
 
 import (
 	"log"
-	"time"
 
 	"github.com/google/uuid"
-	domain "github.com/timpamungkas/grpc-go-server/internal/application/domain/dummy"
 )
 
-func (a *DatabaseAdapter) Save(data *domain.Dummy) (uuid.UUID, error) {
-	now := time.Now()
-	userId := data.UserId
-
-	if data.UserId == uuid.Nil {
-		userId = uuid.New()
-	}
-
-	dummyData := DummyOrm{
-		UserId:    userId,
-		UserName:  data.UserName,
-		CreatedAt: now,
-		UpdatedAt: now,
-	}
-
-	err := a.db.Create(dummyData).Error
-
-	if err != nil {
+func (a *DatabaseAdapter) Save(data *DummyOrm) (uuid.UUID, error) {
+	if err := a.db.Create(data).Error; err != nil {
 		log.Printf("Can't create data : %v", err)
+		return uuid.Nil, err
 	}
 
-	return userId, nil
+	return data.UserId, nil
 }
 
-func (a *DatabaseAdapter) GetByUuid(uuid *uuid.UUID) (domain.Dummy, error) {
-	var dummyOrm DummyOrm
-	var res domain.Dummy
+func (a *DatabaseAdapter) GetByUuid(uuid *uuid.UUID) (DummyOrm, error) {
+	var res DummyOrm
 
-	err := a.db.First(&dummyOrm, "user_id = ?", uuid).Error
-
-	res = domain.Dummy{
-		UserId:   dummyOrm.UserId,
-		UserName: dummyOrm.UserName,
+	if err := a.db.First(&res, "user_id = ?", uuid).Error; err != nil {
+		log.Printf("Can't get data : %v", err)
+		return res, err
 	}
 
-	return res, err
+	return res, nil
 
 }
