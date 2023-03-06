@@ -32,7 +32,7 @@ func main() {
 		log.Fatalf("Can't create database adapter : %v\n", err)
 	}
 
-	runDummyOrm(databaseAdapter)
+	// runDummyOrm(databaseAdapter)
 
 	hs := new(app.HelloService)
 	bs := app.NewBankService(databaseAdapter)

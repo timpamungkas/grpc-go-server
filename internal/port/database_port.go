@@ -18,4 +18,5 @@ type BankDatabasePort interface {
 	CreateExchangeRate(r db.BankExchangeRateOrm) (uuid.UUID, error)
 	GetExchangeRateAtTimestamp(fromCur string, toCur string, ts time.Time) (float64, error)
 	CreateTransaction(t db.BankTransactionOrm) (uuid.UUID, error)
+	UpdateCurrentBalance(acct db.BankAccountOrm, newBalance float64) error
 }

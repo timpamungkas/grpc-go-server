@@ -57,3 +57,12 @@ func (a *DatabaseAdapter) CreateTransaction(t BankTransactionOrm) (uuid.UUID, er
 
 	return t.TransactionUuid, nil
 }
+
+func (a *DatabaseAdapter) UpdateCurrentBalance(acct BankAccountOrm, newBalance float64) error {
+	return a.db.Model(&acct).Updates(
+		map[string]interface{}{
+			"current_balance": newBalance,
+			"updated_at":      time.Now(),
+		},
+	).Error
+}

@@ -1,7 +1,7 @@
 package application
 
 import (
-	"errors"
+	"fmt"
 	"log"
 	"time"
 
@@ -91,7 +91,24 @@ func (b *BankService) CreateTransaction(acct string, t dbank.Transaction) (uuid.
 		UpdatedAt:            now,
 	}
 
-	return b.db.CreateTransaction(transactionOrm)
+	savedUuid, err := b.db.CreateTransaction(transactionOrm)
+
+	if err != nil {
+		return savedUuid, err
+	}
+
+	// recalculate current balance
+	newAmount := t.Amount
+
+	if t.TransactionType == dbank.Out {
+		newAmount = -1 * t.Amount
+	}
+
+	newAccountBalance := bankAccountOrm.CurrentBalance + newAmount
+
+	b.db.UpdateCurrentBalance(bankAccountOrm, newAccountBalance)
+
+	return savedUuid, nil
 }
 
 func (b *BankService) CalculateTransactionSummary(tcur *dbank.TransactionSummary, tnew dbank.Transaction) error {
@@ -101,7 +118,7 @@ func (b *BankService) CalculateTransactionSummary(tcur *dbank.TransactionSummary
 	case dbank.Out:
 		tcur.SumOut += tnew.Amount
 	default:
-		return errors.New("unknown transaction type")
+		return fmt.Errorf("unknown transaction type : %v", tnew.TransactionType)
 	}
 
 	tcur.SumTotal = tcur.SumIn - tcur.SumOut
