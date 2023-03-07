@@ -116,9 +116,9 @@ func (a *GrpcAdapter) SummarizeTransactions(stream bank.BankService_SummarizeTra
 }
 
 func toTime(dt *datetime.DateTime) (time.Time, error) {
-	now := time.Now()
-
 	if dt == nil {
+		now := time.Now()
+
 		dt = &datetime.DateTime{
 			Year:    int32(now.Year()),
 			Month:   int32(now.Month()),
