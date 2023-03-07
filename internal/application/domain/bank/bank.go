@@ -3,18 +3,10 @@ package bank
 import "time"
 
 const (
-	Unknown string = "UNKNOWN"
-	In      string = "IN"
-	Out     string = "OUT"
+	TransactionStatusUnknown string = "UNKNOWN"
+	TransactionStatusIn      string = "IN"
+	TransactionStatusOut     string = "OUT"
 )
-
-type Account struct {
-	AccountNumber  string
-	AccountName    string
-	Currency       string
-	CurrentBalance float64
-	Transactions   []Transaction
-}
 
 type Transaction struct {
 	Amount          float64
@@ -36,11 +28,4 @@ type TransactionSummary struct {
 	SumIn         float64
 	SumOut        float64
 	SumTotal      float64
-}
-
-type TransferRequest struct {
-	FromAccountNumber string
-	ToAccountNumber   string
-	Currency          string
-	Amount            float64
 }

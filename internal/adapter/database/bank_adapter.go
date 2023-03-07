@@ -8,25 +8,12 @@ import (
 	dbank "github.com/timpamungkas/grpc-go-server/internal/application/domain/bank"
 )
 
-func (a *DatabaseAdapter) GetBankAccountByAccountNumber(
-	acct string, withTransactions bool, transactionFrom time.Time,
-	transactionTo time.Time) (BankAccountOrm, error) {
+func (a *DatabaseAdapter) GetBankAccountByAccountNumber(acct string) (BankAccountOrm, error) {
 	var bankAccountOrm BankAccountOrm
 
 	if err := a.db.First(&bankAccountOrm, "account_number = ?", acct).Error; err != nil {
 		log.Printf("Can't find bank account %v : %v", acct, err)
 		return bankAccountOrm, err
-	}
-
-	if withTransactions {
-		var txOrm []BankTransactionOrm
-
-		a.db.Order("transaction_timestamp DESC").
-			Find(&txOrm, "account_uuid = ? "+
-				" AND transaction_timestamp BETWEEN ? AND ?",
-				bankAccountOrm.AccountUuid, transactionFrom, transactionTo)
-
-		bankAccountOrm.Transactions = append(bankAccountOrm.Transactions, txOrm...)
 	}
 
 	return bankAccountOrm, nil
@@ -62,7 +49,7 @@ func (a *DatabaseAdapter) CreateTransaction(acct BankAccountOrm, t BankTransacti
 	// recalculate current balance
 	newAmount := t.Amount
 
-	if t.TransactionType == dbank.Out {
+	if t.TransactionType == dbank.TransactionStatusOut {
 		newAmount = -1 * t.Amount
 	}
 

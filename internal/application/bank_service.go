@@ -11,8 +11,6 @@ import (
 	"github.com/timpamungkas/grpc-go-server/internal/port"
 )
 
-var accounts map[string]float64
-
 type BankService struct {
 	db port.BankDatabasePort
 }
@@ -23,16 +21,8 @@ func NewBankService(dbPort port.BankDatabasePort) *BankService {
 	}
 }
 
-func init() {
-	accounts = map[string]float64{
-		"111": 5001,
-		"222": 5002,
-		"333": 5003,
-	}
-}
-
 func (b *BankService) FindCurrentBalance(acct string) float64 {
-	bankAccount, err := b.db.GetBankAccountByAccountNumber(acct, false, time.Now(), time.Now())
+	bankAccount, err := b.db.GetBankAccountByAccountNumber(acct)
 
 	if err != nil {
 		log.Printf("Error on FindCurrentBalance : %v\n", err)
@@ -73,7 +63,7 @@ func (b *BankService) CreateTransaction(acct string, t dbank.Transaction) (uuid.
 	newUuid := uuid.New()
 	now := time.Now()
 
-	bankAccountOrm, err := b.db.GetBankAccountByAccountNumber(acct, false, time.Now(), time.Now())
+	bankAccountOrm, err := b.db.GetBankAccountByAccountNumber(acct)
 
 	if err != nil {
 		log.Printf("Can't create transaction for %v : %v", acct, err)
@@ -102,9 +92,9 @@ func (b *BankService) CreateTransaction(acct string, t dbank.Transaction) (uuid.
 
 func (b *BankService) CalculateTransactionSummary(tcur *dbank.TransactionSummary, tnew dbank.Transaction) error {
 	switch tnew.TransactionType {
-	case dbank.In:
+	case dbank.TransactionStatusIn:
 		tcur.SumIn += tnew.Amount
-	case dbank.Out:
+	case dbank.TransactionStatusOut:
 		tcur.SumOut += tnew.Amount
 	default:
 		return fmt.Errorf("unknown transaction type : %v", tnew.TransactionType)
@@ -119,16 +109,14 @@ func (b *BankService) Transfer(fromAcct string, toAcct string,
 	currency string, amount float64) (uuid.UUID, bool, error) {
 	now := time.Now()
 
-	fromAccountOrm, err := b.db.GetBankAccountByAccountNumber(
-		fromAcct, false, time.Now(), time.Now())
+	fromAccountOrm, err := b.db.GetBankAccountByAccountNumber(fromAcct)
 
 	if err != nil {
 		log.Printf("Can't find transfer from account %v : %v", fromAcct, err)
 		return uuid.Nil, false, err
 	}
 
-	toAccountOrm, err := b.db.GetBankAccountByAccountNumber(
-		toAcct, false, time.Now(), time.Now())
+	toAccountOrm, err := b.db.GetBankAccountByAccountNumber(toAcct)
 
 	if err != nil {
 		log.Printf("Can't find transfer to account %v : %v", toAcct, err)
@@ -138,7 +126,7 @@ func (b *BankService) Transfer(fromAcct string, toAcct string,
 	fromTransactionOrm := db.BankTransactionOrm{
 		TransactionUuid:      uuid.New(),
 		TransactionTimestamp: now,
-		TransactionType:      dbank.Out,
+		TransactionType:      dbank.TransactionStatusOut,
 		AccountUuid:          fromAccountOrm.AccountUuid,
 		Amount:               amount,
 		Notes:                "Transfer out to " + toAcct,
@@ -149,7 +137,7 @@ func (b *BankService) Transfer(fromAcct string, toAcct string,
 	toTransactionOrm := db.BankTransactionOrm{
 		TransactionUuid:      uuid.New(),
 		TransactionTimestamp: now,
-		TransactionType:      dbank.In,
+		TransactionType:      dbank.TransactionStatusIn,
 		AccountUuid:          toAccountOrm.AccountUuid,
 		Amount:               amount,
 		Notes:                "Transfer in from " + fromAcct,
