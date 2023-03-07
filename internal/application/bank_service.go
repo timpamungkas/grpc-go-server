@@ -105,21 +105,20 @@ func (b *BankService) CalculateTransactionSummary(tcur *dbank.TransactionSummary
 	return nil
 }
 
-func (b *BankService) Transfer(fromAcct string, toAcct string,
-	currency string, amount float64) (uuid.UUID, bool, error) {
+func (b *BankService) Transfer(tt dbank.TransferTransaction) (uuid.UUID, bool, error) {
 	now := time.Now()
 
-	fromAccountOrm, err := b.db.GetBankAccountByAccountNumber(fromAcct)
+	fromAccountOrm, err := b.db.GetBankAccountByAccountNumber(tt.FromAccountNumber)
 
 	if err != nil {
-		log.Printf("Can't find transfer from account %v : %v", fromAcct, err)
+		log.Printf("Can't find transfer from account %v : %v", tt.FromAccountNumber, err)
 		return uuid.Nil, false, err
 	}
 
-	toAccountOrm, err := b.db.GetBankAccountByAccountNumber(toAcct)
+	toAccountOrm, err := b.db.GetBankAccountByAccountNumber(tt.ToAccountNumber)
 
 	if err != nil {
-		log.Printf("Can't find transfer to account %v : %v", toAcct, err)
+		log.Printf("Can't find transfer to account %v : %v", tt.ToAccountNumber, err)
 		return uuid.Nil, false, err
 	}
 
@@ -128,8 +127,8 @@ func (b *BankService) Transfer(fromAcct string, toAcct string,
 		TransactionTimestamp: now,
 		TransactionType:      dbank.TransactionStatusOut,
 		AccountUuid:          fromAccountOrm.AccountUuid,
-		Amount:               amount,
-		Notes:                "Transfer out to " + toAcct,
+		Amount:               tt.Amount,
+		Notes:                "Transfer out to " + tt.ToAccountNumber,
 		CreatedAt:            now,
 		UpdatedAt:            now,
 	}
@@ -139,8 +138,8 @@ func (b *BankService) Transfer(fromAcct string, toAcct string,
 		TransactionTimestamp: now,
 		TransactionType:      dbank.TransactionStatusIn,
 		AccountUuid:          toAccountOrm.AccountUuid,
-		Amount:               amount,
-		Notes:                "Transfer in from " + fromAcct,
+		Amount:               tt.Amount,
+		Notes:                "Transfer in from " + tt.FromAccountNumber,
 		CreatedAt:            now,
 		UpdatedAt:            now,
 	}
@@ -152,8 +151,8 @@ func (b *BankService) Transfer(fromAcct string, toAcct string,
 		TransferUuid:      newTransferUuid,
 		FromAccountUuid:   fromAccountOrm.AccountUuid,
 		ToAccountUuid:     toAccountOrm.AccountUuid,
-		Currency:          currency,
-		Amount:            amount,
+		Currency:          tt.Currency,
+		Amount:            tt.Amount,
 		TransferTimestamp: now,
 		TransferSuccess:   false,
 		CreatedAt:         now,
@@ -161,7 +160,8 @@ func (b *BankService) Transfer(fromAcct string, toAcct string,
 	}
 
 	if _, err := b.db.CreateTransfer(transferOrm); err != nil {
-		log.Printf("Can't create transfer from %v to %v : %v", fromAcct, toAcct, err)
+		log.Printf("Can't create transfer from %v to %v : %v",
+			tt.FromAccountNumber, tt.ToAccountNumber, err)
 		return uuid.Nil, false, err
 	}
 

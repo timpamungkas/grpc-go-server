@@ -28,7 +28,7 @@ func (a *GrpcAdapter) GetCurrentBalance(
 }
 
 func (a *GrpcAdapter) FetchExchangeRates(in *bank.ExchangeRateRequest,
-	stream bank.BankService_FetchExchangeRateServer) error {
+	stream bank.BankService_FetchExchangeRatesServer) error {
 	for {
 		rate := a.bankService.FindExchangeRate(in.FromCurrency, in.ToCurrency, time.Now())
 
@@ -45,7 +45,7 @@ func (a *GrpcAdapter) FetchExchangeRates(in *bank.ExchangeRateRequest,
 	}
 }
 
-func (a *GrpcAdapter) SummarizeTransactions(stream bank.BankService_SummarizeTransactionServer) error {
+func (a *GrpcAdapter) SummarizeTransactions(stream bank.BankService_SummarizeTransactionsServer) error {
 	tsum := dbank.TransactionSummary{
 		SummaryOnDate: time.Now(),
 		SumIn:         0,
