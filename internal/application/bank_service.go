@@ -50,13 +50,13 @@ func (b *BankService) CreateExchangeRate(r dbank.ExchangeRate) (uuid.UUID, error
 }
 
 func (b *BankService) FindExchangeRate(fromCur string, toCur string, ts time.Time) float64 {
-	rate, err := b.db.GetExchangeRateAtTimestamp(fromCur, toCur, ts)
+	exchangeRate, err := b.db.GetExchangeRateAtTimestamp(fromCur, toCur, ts)
 
 	if err != nil {
 		return 0
 	}
 
-	return float64(rate)
+	return float64(exchangeRate.Rate)
 }
 
 func (b *BankService) CreateTransaction(acct string, t dbank.Transaction) (uuid.UUID, error) {

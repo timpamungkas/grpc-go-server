@@ -27,7 +27,7 @@ func (a *DatabaseAdapter) CreateExchangeRate(r BankExchangeRateOrm) (uuid.UUID, 
 	return r.ExchangeRateUuid, nil
 }
 
-func (a *DatabaseAdapter) GetExchangeRateAtTimestamp(fromCur string, toCur string, ts time.Time) (float64, error) {
+func (a *DatabaseAdapter) GetExchangeRateAtTimestamp(fromCur string, toCur string, ts time.Time) (BankExchangeRateOrm, error) {
 	var exchangeRateOrm BankExchangeRateOrm
 
 	err := a.db.First(&exchangeRateOrm, "from_currency = ? "+
@@ -35,7 +35,7 @@ func (a *DatabaseAdapter) GetExchangeRateAtTimestamp(fromCur string, toCur strin
 		" AND (? BETWEEN valid_from_timestamp AND valid_to_timestamp)",
 		fromCur, toCur, ts).Error
 
-	return exchangeRateOrm.Rate, err
+	return exchangeRateOrm, err
 }
 
 func (a *DatabaseAdapter) CreateTransaction(acct BankAccountOrm, t BankTransactionOrm) (uuid.UUID, error) {

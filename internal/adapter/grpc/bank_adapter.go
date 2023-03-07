@@ -30,14 +30,15 @@ func (a *GrpcAdapter) GetCurrentBalance(
 func (a *GrpcAdapter) FetchExchangeRates(in *bank.ExchangeRateRequest,
 	stream bank.BankService_FetchExchangeRatesServer) error {
 	for {
-		rate := a.bankService.FindExchangeRate(in.FromCurrency, in.ToCurrency, time.Now())
+		now := time.Now()
+		rate := a.bankService.FindExchangeRate(in.FromCurrency, in.ToCurrency, now)
 
 		stream.Send(
 			&bank.ExchangeRateResponse{
 				FromCurrency: in.FromCurrency,
 				ToCurrency:   in.ToCurrency,
 				Rate:         rate,
-				Timestamp:    time.Now().Format(time.RFC3339),
+				Timestamp:    now.Format(time.RFC3339),
 			},
 		)
 
