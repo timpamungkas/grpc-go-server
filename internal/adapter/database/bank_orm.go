@@ -14,7 +14,7 @@ type BankAccountOrm struct {
 	CurrentBalance float64
 	CreatedAt      time.Time
 	UpdatedAt      time.Time
-	Transactions   []BankTransactionOrm
+	Transactions   []BankTransactionOrm `gorm:"foreignKey:AccountUuid"`
 }
 
 func (BankAccountOrm) TableName() string {
