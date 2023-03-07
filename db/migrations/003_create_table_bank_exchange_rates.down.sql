@@ -1,1 +1,1 @@
-DROP TABLE IF EXISTS bank_exchange_rates;
+DROP TABLE IF EXISTS bank_exchange_rates CASCADE;

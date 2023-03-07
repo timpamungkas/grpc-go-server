@@ -129,8 +129,8 @@ func (a *DatabaseAdapter) CreateTransferTransactionPair(
 func (a *DatabaseAdapter) UpdateTransferStatus(transfer BankTransferOrm, status bool) error {
 	if err := a.db.Model(&transfer).Updates(
 		map[string]interface{}{
-			"transfer_status": status,
-			"updated_at":      time.Now(),
+			"transfer_success": status,
+			"updated_at":       time.Now(),
 		},
 	).Error; err != nil {
 		return err
