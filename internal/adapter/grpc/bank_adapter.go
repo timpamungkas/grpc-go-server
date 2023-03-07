@@ -127,8 +127,14 @@ func (a *GrpcAdapter) TransferMultiple(stream bank.BankService_TransferMultipleS
 			log.Fatalf("Error while reading from client : %v", err)
 		}
 
-		_, transferSuccess, err := a.bankService.Transfer(
-			req.FromAccountNumber, req.ToAccountNumber, "USD", req.Amount)
+		tt := dbank.TransferTransaction{
+			FromAccountNumber: req.FromAccountNumber,
+			ToAccountNumber:   req.ToAccountNumber,
+			Currency:          req.Currency,
+			Amount:            req.Amount,
+		}
+
+		_, transferSuccess, err := a.bankService.Transfer(tt)
 
 		if err != nil {
 			return err
