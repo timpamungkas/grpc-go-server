@@ -1,1 +1,1 @@
-DROP TABLE IF EXISTS bank_transfers;
+DROP TABLE IF EXISTS bank_transfers CASCADE;

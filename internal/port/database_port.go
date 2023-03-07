@@ -13,10 +13,9 @@ type DummyDatabasePort interface {
 }
 
 type BankDatabasePort interface {
-	GetBankAccountByAccountNumber(acct string, withTransactions bool,
-		transactionFrom time.Time, transactionTo time.Time) (db.BankAccountOrm, error)
+	GetBankAccountByAccountNumber(acct string) (db.BankAccountOrm, error)
 	CreateExchangeRate(r db.BankExchangeRateOrm) (uuid.UUID, error)
-	GetExchangeRateAtTimestamp(fromCur string, toCur string, ts time.Time) (float64, error)
+	GetExchangeRateAtTimestamp(fromCur string, toCur string, ts time.Time) (db.BankExchangeRateOrm, error)
 	CreateTransaction(acct db.BankAccountOrm, t db.BankTransactionOrm) (uuid.UUID, error)
 	CreateTransfer(transfer db.BankTransferOrm) (uuid.UUID, error)
 	CreateTransferTransactionPair(

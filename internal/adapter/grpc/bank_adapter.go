@@ -28,16 +28,17 @@ func (a *GrpcAdapter) GetCurrentBalance(
 }
 
 func (a *GrpcAdapter) FetchExchangeRates(in *bank.ExchangeRateRequest,
-	stream bank.BankService_FetchExchangeRateServer) error {
+	stream bank.BankService_FetchExchangeRatesServer) error {
 	for {
-		rate := a.bankService.FindExchangeRate(in.FromCurrency, in.ToCurrency, time.Now())
+		now := time.Now()
+		rate := a.bankService.FindExchangeRate(in.FromCurrency, in.ToCurrency, now)
 
 		stream.Send(
 			&bank.ExchangeRateResponse{
 				FromCurrency: in.FromCurrency,
 				ToCurrency:   in.ToCurrency,
 				Rate:         rate,
-				Timestamp:    time.Now().Format(time.RFC3339),
+				Timestamp:    now.Format(time.RFC3339),
 			},
 		)
 
@@ -45,7 +46,7 @@ func (a *GrpcAdapter) FetchExchangeRates(in *bank.ExchangeRateRequest,
 	}
 }
 
-func (a *GrpcAdapter) SummarizeTransactions(stream bank.BankService_SummarizeTransactionServer) error {
+func (a *GrpcAdapter) SummarizeTransactions(stream bank.BankService_SummarizeTransactionsServer) error {
 	tsum := dbank.TransactionSummary{
 		SummaryOnDate: time.Now(),
 		SumIn:         0,
@@ -86,18 +87,24 @@ func (a *GrpcAdapter) SummarizeTransactions(stream bank.BankService_SummarizeTra
 			log.Fatalf("Error while parsing timestamp %v : %v", in.Timestamp, err)
 		}
 
-		ttype := dbank.Unknown
+		ttype := dbank.TransactionStatusUnknown
 
 		if in.Type == bank.TransactionType_TRANSACTION_TYPE_IN {
-			ttype = dbank.In
+			ttype = dbank.TransactionStatusIn
 		} else if in.Type == bank.TransactionType_TRANSACTION_TYPE_OUT {
-			ttype = dbank.Out
+			ttype = dbank.TransactionStatusOut
 		}
 
 		tcur := dbank.Transaction{
 			Amount:          in.Amount,
 			Timestamp:       ts,
 			TransactionType: ttype,
+		}
+
+		_, err = a.bankService.CreateTransaction(in.AccountNumber, tcur)
+
+		if err != nil {
+			log.Printf("Failed create transaction : %v", err)
 		}
 
 		err = a.bankService.CalculateTransactionSummary(&tsum, tcur)
@@ -109,10 +116,39 @@ func (a *GrpcAdapter) SummarizeTransactions(stream bank.BankService_SummarizeTra
 }
 
 func toTime(dt *datetime.DateTime) (time.Time, error) {
+	if dt == nil {
+		now := time.Now()
+
+		dt = &datetime.DateTime{
+			Year:    int32(now.Year()),
+			Month:   int32(now.Month()),
+			Day:     int32(now.Day()),
+			Hours:   int32(now.Hour()),
+			Minutes: int32(now.Minute()),
+			Seconds: int32(now.Second()),
+			Nanos:   int32(now.Nanosecond()),
+		}
+	}
+
 	res := time.Date(int(dt.Year), time.Month(dt.Month), int(dt.Day),
 		int(dt.Hours), int(dt.Minutes), int(dt.Seconds), int(dt.Nanos), time.UTC)
 
 	return res, nil
+}
+
+func currentDatetime() *datetime.DateTime {
+	now := time.Now()
+
+	return &datetime.DateTime{
+		Year:       int32(now.Year()),
+		Month:      int32(now.Month()),
+		Day:        int32(now.Day()),
+		Hours:      int32(now.Hour()),
+		Minutes:    int32(now.Minute()),
+		Seconds:    int32(now.Second()),
+		Nanos:      int32(now.Second()),
+		TimeOffset: &datetime.DateTime_UtcOffset{},
+	}
 }
 
 func (a *GrpcAdapter) TransferMultiple(stream bank.BankService_TransferMultipleServer) error {
@@ -127,8 +163,14 @@ func (a *GrpcAdapter) TransferMultiple(stream bank.BankService_TransferMultipleS
 			log.Fatalf("Error while reading from client : %v", err)
 		}
 
-		_, transferSuccess, err := a.bankService.Transfer(
-			req.FromAccountNumber, req.ToAccountNumber, "USD", req.Amount)
+		tt := dbank.TransferTransaction{
+			FromAccountNumber: req.FromAccountNumber,
+			ToAccountNumber:   req.ToAccountNumber,
+			Currency:          req.Currency,
+			Amount:            req.Amount,
+		}
+
+		_, transferSuccess, err := a.bankService.Transfer(tt)
 
 		if err != nil {
 			return err
@@ -137,6 +179,7 @@ func (a *GrpcAdapter) TransferMultiple(stream bank.BankService_TransferMultipleS
 		res := bank.TransferResponse{
 			FromAccountNumber: req.FromAccountNumber,
 			ToAccountNumber:   req.ToAccountNumber,
+			Currency:          req.Currency,
 			Amount:            req.Amount,
 			Timestamp:         currentDatetime(),
 		}
@@ -154,19 +197,4 @@ func (a *GrpcAdapter) TransferMultiple(stream bank.BankService_TransferMultipleS
 		}
 	}
 
-}
-
-func currentDatetime() *datetime.DateTime {
-	now := time.Now()
-
-	return &datetime.DateTime{
-		Year:       int32(now.Year()),
-		Month:      int32(now.Month()),
-		Day:        int32(now.Day()),
-		Hours:      int32(now.Hour()),
-		Minutes:    int32(now.Minute()),
-		Seconds:    int32(now.Second()),
-		Nanos:      int32(now.Second()),
-		TimeOffset: &datetime.DateTime_UtcOffset{},
-	}
 }

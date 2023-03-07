@@ -14,26 +14,11 @@ type BankAccountOrm struct {
 	CurrentBalance float64
 	CreatedAt      time.Time
 	UpdatedAt      time.Time
-	Transactions   []BankTransactionOrm
+	Transactions   []BankTransactionOrm `gorm:"foreignKey:AccountUuid"`
 }
 
 func (BankAccountOrm) TableName() string {
 	return "bank_accounts"
-}
-
-type BankExchangeRateOrm struct {
-	ExchangeRateUuid   uuid.UUID `gorm:"primaryKey"`
-	FromCurrency       string
-	ToCurrency         string
-	Rate               float64
-	ValidFromTimestamp time.Time
-	ValidToTimestamp   time.Time
-	CreatedAt          time.Time
-	UpdatedAt          time.Time
-}
-
-func (BankExchangeRateOrm) TableName() string {
-	return "bank_exchange_rates"
 }
 
 type BankTransactionOrm struct {
@@ -49,6 +34,21 @@ type BankTransactionOrm struct {
 
 func (BankTransactionOrm) TableName() string {
 	return "bank_transactions"
+}
+
+type BankExchangeRateOrm struct {
+	ExchangeRateUuid   uuid.UUID `gorm:"primaryKey"`
+	FromCurrency       string
+	ToCurrency         string
+	Rate               float64
+	ValidFromTimestamp time.Time
+	ValidToTimestamp   time.Time
+	CreatedAt          time.Time
+	UpdatedAt          time.Time
+}
+
+func (BankExchangeRateOrm) TableName() string {
+	return "bank_exchange_rates"
 }
 
 type BankTransferOrm struct {

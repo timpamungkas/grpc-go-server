@@ -8,25 +8,12 @@ import (
 	dbank "github.com/timpamungkas/grpc-go-server/internal/application/domain/bank"
 )
 
-func (a *DatabaseAdapter) GetBankAccountByAccountNumber(
-	acct string, withTransactions bool, transactionFrom time.Time,
-	transactionTo time.Time) (BankAccountOrm, error) {
+func (a *DatabaseAdapter) GetBankAccountByAccountNumber(acct string) (BankAccountOrm, error) {
 	var bankAccountOrm BankAccountOrm
 
 	if err := a.db.First(&bankAccountOrm, "account_number = ?", acct).Error; err != nil {
 		log.Printf("Can't find bank account %v : %v", acct, err)
 		return bankAccountOrm, err
-	}
-
-	if withTransactions {
-		var txOrm []BankTransactionOrm
-
-		a.db.Order("transaction_timestamp DESC").
-			Find(&txOrm, "account_uuid = ? "+
-				" AND transaction_timestamp BETWEEN ? AND ?",
-				bankAccountOrm.AccountUuid, transactionFrom, transactionTo)
-
-		bankAccountOrm.Transactions = append(bankAccountOrm.Transactions, txOrm...)
 	}
 
 	return bankAccountOrm, nil
@@ -40,7 +27,7 @@ func (a *DatabaseAdapter) CreateExchangeRate(r BankExchangeRateOrm) (uuid.UUID, 
 	return r.ExchangeRateUuid, nil
 }
 
-func (a *DatabaseAdapter) GetExchangeRateAtTimestamp(fromCur string, toCur string, ts time.Time) (float64, error) {
+func (a *DatabaseAdapter) GetExchangeRateAtTimestamp(fromCur string, toCur string, ts time.Time) (BankExchangeRateOrm, error) {
 	var exchangeRateOrm BankExchangeRateOrm
 
 	err := a.db.First(&exchangeRateOrm, "from_currency = ? "+
@@ -48,7 +35,7 @@ func (a *DatabaseAdapter) GetExchangeRateAtTimestamp(fromCur string, toCur strin
 		" AND (? BETWEEN valid_from_timestamp AND valid_to_timestamp)",
 		fromCur, toCur, ts).Error
 
-	return exchangeRateOrm.Rate, err
+	return exchangeRateOrm, err
 }
 
 func (a *DatabaseAdapter) CreateTransaction(acct BankAccountOrm, t BankTransactionOrm) (uuid.UUID, error) {
@@ -62,7 +49,7 @@ func (a *DatabaseAdapter) CreateTransaction(acct BankAccountOrm, t BankTransacti
 	// recalculate current balance
 	newAmount := t.Amount
 
-	if t.TransactionType == dbank.Out {
+	if t.TransactionType == dbank.TransactionStatusOut {
 		newAmount = -1 * t.Amount
 	}
 
@@ -142,8 +129,8 @@ func (a *DatabaseAdapter) CreateTransferTransactionPair(
 func (a *DatabaseAdapter) UpdateTransferStatus(transfer BankTransferOrm, status bool) error {
 	if err := a.db.Model(&transfer).Updates(
 		map[string]interface{}{
-			"transfer_status": status,
-			"updated_at":      time.Now(),
+			"transfer_success": status,
+			"updated_at":       time.Now(),
 		},
 	).Error; err != nil {
 		return err
