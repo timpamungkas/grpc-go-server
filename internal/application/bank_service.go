@@ -21,14 +21,15 @@ func NewBankService(dbPort port.BankDatabasePort) *BankService {
 	}
 }
 
-func (b *BankService) FindCurrentBalance(acct string) float64 {
+func (b *BankService) FindCurrentBalance(acct string) (float64, error) {
 	bankAccount, err := b.db.GetBankAccountByAccountNumber(acct)
 
 	if err != nil {
 		log.Printf("Error on FindCurrentBalance : %v\n", err)
+		return 0, err
 	}
 
-	return bankAccount.CurrentBalance
+	return bankAccount.CurrentBalance, nil
 }
 
 func (b *BankService) CreateExchangeRate(r dbank.ExchangeRate) (uuid.UUID, error) {

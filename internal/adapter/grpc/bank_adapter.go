@@ -10,12 +10,21 @@ import (
 	"github.com/timpamungkas/grpc-proto/protogen/go/bank"
 	"google.golang.org/genproto/googleapis/type/date"
 	"google.golang.org/genproto/googleapis/type/datetime"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 func (a *GrpcAdapter) GetCurrentBalance(
 	ctx context.Context, in *bank.CurrentBalanceRequest) (*bank.CurrentBalanceResponse, error) {
 	now := time.Now()
-	bal := a.bankService.FindCurrentBalance(in.AccountNumber)
+	bal, err := a.bankService.FindCurrentBalance(in.AccountNumber)
+
+	if err != nil {
+		return nil, status.Errorf(
+			codes.NotFound,
+			"account balance %v not found", in.AccountNumber,
+		)
+	}
 
 	return &bank.CurrentBalanceResponse{
 		Amount: bal,
