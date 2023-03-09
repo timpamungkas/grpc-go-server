@@ -8,6 +8,7 @@ import (
 
 	dbank "github.com/timpamungkas/grpc-go-server/internal/application/domain/bank"
 	"github.com/timpamungkas/grpc-proto/protogen/go/bank"
+	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/genproto/googleapis/type/date"
 	"google.golang.org/genproto/googleapis/type/datetime"
 	"google.golang.org/grpc/codes"
@@ -21,8 +22,8 @@ func (a *GrpcAdapter) GetCurrentBalance(
 
 	if err != nil {
 		return nil, status.Errorf(
-			codes.NotFound,
-			"account balance %v not found", in.AccountNumber,
+			codes.FailedPrecondition,
+			"account %v not found", in.AccountNumber,
 		)
 	}
 
@@ -40,7 +41,22 @@ func (a *GrpcAdapter) FetchExchangeRates(in *bank.ExchangeRateRequest,
 	stream bank.BankService_FetchExchangeRatesServer) error {
 	for {
 		now := time.Now()
-		rate := a.bankService.FindExchangeRate(in.FromCurrency, in.ToCurrency, now)
+		rate, err := a.bankService.FindExchangeRate(in.FromCurrency, in.ToCurrency, now)
+
+		if err != nil {
+			s := status.New(codes.InvalidArgument,
+				"Currency not valid. Please pass valid currency for both from and to")
+			s, _ = s.WithDetails(&errdetails.ErrorInfo{
+				Domain: "my-bank-website.com",
+				Reason: "INVALID_CURRENCY",
+				Metadata: map[string]string{
+					"from_currency": in.FromCurrency,
+					"to_currency":   in.ToCurrency,
+				},
+			})
+
+			return s.Err()
+		}
 
 		stream.Send(
 			&bank.ExchangeRateResponse{

@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	db "github.com/timpamungkas/grpc-go-server/internal/adapter/database"
+	"github.com/timpamungkas/grpc-go-server/internal/application/domain/bank"
 	dbank "github.com/timpamungkas/grpc-go-server/internal/application/domain/bank"
 	"github.com/timpamungkas/grpc-go-server/internal/port"
 )
@@ -50,14 +51,14 @@ func (b *BankService) CreateExchangeRate(r dbank.ExchangeRate) (uuid.UUID, error
 	return b.db.CreateExchangeRate(exchangeRateOrm)
 }
 
-func (b *BankService) FindExchangeRate(fromCur string, toCur string, ts time.Time) float64 {
+func (b *BankService) FindExchangeRate(fromCur string, toCur string, ts time.Time) (float64, error) {
 	exchangeRate, err := b.db.GetExchangeRateAtTimestamp(fromCur, toCur, ts)
 
 	if err != nil {
-		return 0
+		return 0, err
 	}
 
-	return float64(exchangeRate.Rate)
+	return float64(exchangeRate.Rate), nil
 }
 
 func (b *BankService) CreateTransaction(acct string, t dbank.Transaction) (uuid.UUID, error) {
@@ -69,6 +70,11 @@ func (b *BankService) CreateTransaction(acct string, t dbank.Transaction) (uuid.
 	if err != nil {
 		log.Printf("Can't create transaction for %v : %v", acct, err)
 		return uuid.Nil, err
+	}
+
+	if t.TransactionType == bank.TransactionStatusOut && bankAccountOrm.CurrentBalance < t.Amount {
+		return uuid.Nil, fmt.Errorf("insufficient account balance %v for out transaction amount %v",
+			bankAccountOrm.CurrentBalance, t.Amount)
 	}
 
 	transactionOrm := db.BankTransactionOrm{
