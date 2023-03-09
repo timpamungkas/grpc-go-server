@@ -68,13 +68,13 @@ func (b *BankService) CreateTransaction(acct string, t dbank.Transaction) (uuid.
 	bankAccountOrm, err := b.db.GetBankAccountByAccountNumber(acct)
 
 	if err != nil {
-		log.Printf("Can't create transaction for %v : %v", acct, err)
-		return uuid.Nil, err
+		return uuid.Nil, fmt.Errorf("can't find account number %v : %v", acct, err.Error())
 	}
 
 	if t.TransactionType == bank.TransactionStatusOut && bankAccountOrm.CurrentBalance < t.Amount {
-		return uuid.Nil, fmt.Errorf("insufficient account balance %v for out transaction amount %v",
-			bankAccountOrm.CurrentBalance, t.Amount)
+		return bankAccountOrm.AccountUuid,
+			fmt.Errorf("insufficient account balance %v for [out] transaction amount %v",
+				bankAccountOrm.CurrentBalance, t.Amount)
 	}
 
 	transactionOrm := db.BankTransactionOrm{

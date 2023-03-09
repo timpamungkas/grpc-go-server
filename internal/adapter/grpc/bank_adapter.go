@@ -2,10 +2,12 @@ package grpc
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"log"
 	"time"
 
+	"github.com/google/uuid"
 	dbank "github.com/timpamungkas/grpc-go-server/internal/application/domain/bank"
 	"github.com/timpamungkas/grpc-proto/protogen/go/bank"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
@@ -126,10 +128,33 @@ func (a *GrpcAdapter) SummarizeTransactions(stream bank.BankService_SummarizeTra
 			TransactionType: ttype,
 		}
 
-		_, err = a.bankService.CreateTransaction(in.AccountNumber, tcur)
+		accountUuid, err := a.bankService.CreateTransaction(in.AccountNumber, tcur)
 
-		if err != nil {
-			log.Printf("Failed create transaction : %v", err)
+		if err != nil && accountUuid == uuid.Nil {
+			s := status.New(codes.InvalidArgument, err.Error())
+			s, _ = s.WithDetails(&errdetails.BadRequest{
+				FieldViolations: []*errdetails.BadRequest_FieldViolation{
+					{
+						Field:       "account_number",
+						Description: "Invalid account number",
+					},
+				},
+			})
+
+			return s.Err()
+		} else if err != nil && accountUuid != uuid.Nil {
+			s := status.New(codes.InvalidArgument, err.Error())
+			s, _ = s.WithDetails(&errdetails.BadRequest{
+				FieldViolations: []*errdetails.BadRequest_FieldViolation{
+					{
+						Field: "amount",
+						Description: fmt.Sprintf(
+							"Requested amount %v exceed available balance", in.Amount),
+					},
+				},
+			})
+
+			return s.Err()
 		}
 
 		err = a.bankService.CalculateTransactionSummary(&tsum, tcur)
