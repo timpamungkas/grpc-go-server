@@ -42,7 +42,7 @@ func (a *GrpcAdapter) GetCurrentBalance(
 func (a *GrpcAdapter) FetchExchangeRates(in *bank.ExchangeRateRequest,
 	stream bank.BankService_FetchExchangeRatesServer) error {
 	for {
-		now := time.Now()
+		now := time.Now().Truncate(time.Second)
 		rate, err := a.bankService.FindExchangeRate(in.FromCurrency, in.ToCurrency, now)
 
 		if err != nil {

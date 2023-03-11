@@ -5,7 +5,7 @@ go 1.20
 require (
 	github.com/golang-migrate/migrate/v4 v4.15.2
 	github.com/google/uuid v1.3.0
-	github.com/timpamungkas/grpc-proto v0.0.36
+	github.com/timpamungkas/grpc-proto v0.0.37
 	google.golang.org/genproto v0.0.0-20230306155012-7f2fa6fef1f4
 	google.golang.org/grpc v1.53.0
 	gorm.io/driver/postgres v1.4.8
