@@ -66,7 +66,7 @@ func generateExchangeRates(bs *app.BankService,
 
 	for range ticker.C {
 		now := time.Now()
-		validFrom := now.Truncate(time.Second).Add(1 * time.Second)
+		validFrom := now.Truncate(time.Second).Add(3 * time.Second)
 		validTo := validFrom.Add(duration).Add(-1 * time.Millisecond)
 
 		dummyRate := bank.ExchangeRate{
