@@ -121,6 +121,10 @@ func (b *BankService) Transfer(tt dbank.TransferTransaction) (uuid.UUID, bool, e
 		return uuid.Nil, false, dbank.ErrTransferSourceAccountNotFound
 	}
 
+	if fromAccountOrm.CurrentBalance < tt.Amount {
+		return uuid.Nil, false, dbank.ErrTransferTransactionPair
+	}
+
 	toAccountOrm, err := b.db.GetBankAccountByAccountNumber(tt.ToAccountNumber)
 
 	if err != nil {
