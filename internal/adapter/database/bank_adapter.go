@@ -49,7 +49,7 @@ func (a *DatabaseAdapter) CreateTransaction(acct BankAccountOrm, t BankTransacti
 	// recalculate current balance
 	newAmount := t.Amount
 
-	if t.TransactionType == dbank.TransactionStatusOut {
+	if t.TransactionType == dbank.TransactionTypeOut {
 		newAmount = -1 * t.Amount
 	}
 

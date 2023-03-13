@@ -115,12 +115,12 @@ func (a *GrpcAdapter) SummarizeTransactions(stream bank.BankService_SummarizeTra
 			log.Fatalf("Error while parsing timestamp %v : %v", in.Timestamp, err)
 		}
 
-		ttype := dbank.TransactionStatusUnknown
+		ttype := dbank.TransactionTypeUnknown
 
 		if in.Type == bank.TransactionType_TRANSACTION_TYPE_IN {
-			ttype = dbank.TransactionStatusIn
+			ttype = dbank.TransactionTypeIn
 		} else if in.Type == bank.TransactionType_TRANSACTION_TYPE_OUT {
-			ttype = dbank.TransactionStatusOut
+			ttype = dbank.TransactionTypeOut
 		}
 
 		tcur := dbank.Transaction{

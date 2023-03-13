@@ -71,7 +71,7 @@ func (b *BankService) CreateTransaction(acct string, t dbank.Transaction) (uuid.
 		return uuid.Nil, fmt.Errorf("can't find account number %v : %v", acct, err.Error())
 	}
 
-	if t.TransactionType == bank.TransactionStatusOut && bankAccountOrm.CurrentBalance < t.Amount {
+	if t.TransactionType == bank.TransactionTypeOut && bankAccountOrm.CurrentBalance < t.Amount {
 		return bankAccountOrm.AccountUuid,
 			fmt.Errorf("insufficient account balance %v for [out] transaction amount %v",
 				bankAccountOrm.CurrentBalance, t.Amount)
@@ -99,9 +99,9 @@ func (b *BankService) CreateTransaction(acct string, t dbank.Transaction) (uuid.
 
 func (b *BankService) CalculateTransactionSummary(tcur *dbank.TransactionSummary, tnew dbank.Transaction) error {
 	switch tnew.TransactionType {
-	case dbank.TransactionStatusIn:
+	case dbank.TransactionTypeIn:
 		tcur.SumIn += tnew.Amount
-	case dbank.TransactionStatusOut:
+	case dbank.TransactionTypeOut:
 		tcur.SumOut += tnew.Amount
 	default:
 		return fmt.Errorf("unknown transaction type : %v", tnew.TransactionType)
@@ -134,7 +134,7 @@ func (b *BankService) Transfer(tt dbank.TransferTransaction) (uuid.UUID, bool, e
 	fromTransactionOrm := db.BankTransactionOrm{
 		TransactionUuid:      uuid.New(),
 		TransactionTimestamp: now,
-		TransactionType:      dbank.TransactionStatusOut,
+		TransactionType:      dbank.TransactionTypeOut,
 		AccountUuid:          fromAccountOrm.AccountUuid,
 		Amount:               tt.Amount,
 		Notes:                "Transfer out to " + tt.ToAccountNumber,
@@ -145,7 +145,7 @@ func (b *BankService) Transfer(tt dbank.TransferTransaction) (uuid.UUID, bool, e
 	toTransactionOrm := db.BankTransactionOrm{
 		TransactionUuid:      uuid.New(),
 		TransactionTimestamp: now,
-		TransactionType:      dbank.TransactionStatusIn,
+		TransactionType:      dbank.TransactionTypeIn,
 		AccountUuid:          toAccountOrm.AccountUuid,
 		Amount:               tt.Amount,
 		Notes:                "Transfer in from " + tt.FromAccountNumber,

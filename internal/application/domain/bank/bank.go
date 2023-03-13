@@ -6,9 +6,9 @@ import (
 )
 
 const (
-	TransactionStatusUnknown string = "UNKNOWN"
-	TransactionStatusIn      string = "IN"
-	TransactionStatusOut     string = "OUT"
+	TransactionTypeUnknown string = "UNKNOWN"
+	TransactionTypeIn      string = "IN"
+	TransactionTypeOut     string = "OUT"
 )
 
 type ExchangeRate struct {
