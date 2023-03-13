@@ -8,24 +8,28 @@ import (
 	"github.com/timpamungkas/grpc-go-server/internal/port"
 	"github.com/timpamungkas/grpc-proto/protogen/go/bank"
 	"github.com/timpamungkas/grpc-proto/protogen/go/hello"
+	rel "github.com/timpamungkas/grpc-proto/protogen/go/reliability"
 	"google.golang.org/grpc"
 )
 
 type GrpcAdapter struct {
-	helloService port.HelloServicePort
-	bankService  port.BankServicePort
-	grpcPort     int
-	server       *grpc.Server
+	helloService       port.HelloServicePort
+	bankService        port.BankServicePort
+	reliabilityService port.ReliabilityServicePort
+	grpcPort           int
+	server             *grpc.Server
 	hello.HelloServiceServer
 	bank.BankServiceServer
+	rel.ReliabilityServiceServer
 }
 
 func NewGrpcAdapter(helloService port.HelloServicePort, bankService port.BankServicePort,
-	grpcPort int) *GrpcAdapter {
+	reliabilityService port.ReliabilityServicePort, grpcPort int) *GrpcAdapter {
 	return &GrpcAdapter{
-		helloService: helloService,
-		bankService:  bankService,
-		grpcPort:     grpcPort,
+		helloService:       helloService,
+		bankService:        bankService,
+		reliabilityService: reliabilityService,
+		grpcPort:           grpcPort,
 	}
 }
 
@@ -44,6 +48,7 @@ func (a *GrpcAdapter) Run() {
 
 	hello.RegisterHelloServiceServer(grpcServer, a)
 	bank.RegisterBankServiceServer(grpcServer, a)
+	rel.RegisterReliabilityServiceServer(grpcServer, a)
 
 	if err = grpcServer.Serve(listen); err != nil {
 		log.Fatalf("Failed to serve grpc on %d : %v\n", a.grpcPort, err)
