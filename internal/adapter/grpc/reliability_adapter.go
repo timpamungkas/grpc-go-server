@@ -51,18 +51,26 @@ func (a *GrpcAdapter) UnaryReliability(ctx context.Context, in *rel.ReliabilityR
 }
 
 func (a *GrpcAdapter) ServerStreamingReliability(in *rel.ReliabilityRequest, stream rel.ReliabilityService_ServerStreamingReliabilityServer) error {
+	context := stream.Context()
+
 	for {
-		str, sts := a.reliabilityService.GenerateReliability(in.MinDelaySecond, in.MaxDelaySecond, in.StatusCodes)
+		select {
+		case <-context.Done():
+			log.Println("Client cancelled request")
+			return nil
+		default:
+			str, sts := a.reliabilityService.GenerateReliability(in.MinDelaySecond, in.MaxDelaySecond, in.StatusCodes)
 
-		if errStatus := generateErrStatus(sts); errStatus != nil {
-			return errStatus
+			if errStatus := generateErrStatus(sts); errStatus != nil {
+				return errStatus
+			}
+
+			stream.Send(
+				&rel.ReliabilityResponse{
+					DummyString: str,
+				},
+			)
 		}
-
-		stream.Send(
-			&rel.ReliabilityResponse{
-				DummyString: str,
-			},
-		)
 	}
 }
 
@@ -93,32 +101,40 @@ func (a *GrpcAdapter) ClientStreamingReliability(stream rel.ReliabilityService_C
 }
 
 func (a *GrpcAdapter) BiDirectionalReliability(stream rel.ReliabilityService_BiDirectionalReliabilityServer) error {
+	context := stream.Context()
+
 	for {
-		req, err := stream.Recv()
-
-		if err == io.EOF {
+		select {
+		case <-context.Done():
+			log.Println("Client cancelled request")
 			return nil
-		}
+		default:
+			req, err := stream.Recv()
 
-		if err != nil {
-			log.Fatalf("Error while reading from client : %v", err)
-		}
+			if err == io.EOF {
+				return nil
+			}
 
-		str, sts := a.reliabilityService.GenerateReliability(
-			req.MinDelaySecond, req.MaxDelaySecond, req.StatusCodes)
+			if err != nil {
+				log.Fatalf("Error while reading from client : %v", err)
+			}
 
-		if errStatus := generateErrStatus(sts); errStatus != nil {
-			return errStatus
-		}
+			str, sts := a.reliabilityService.GenerateReliability(
+				req.MinDelaySecond, req.MaxDelaySecond, req.StatusCodes)
 
-		err = stream.Send(
-			&rel.ReliabilityResponse{
-				DummyString: str,
-			},
-		)
+			if errStatus := generateErrStatus(sts); errStatus != nil {
+				return errStatus
+			}
 
-		if err != nil {
-			log.Fatalf("Error while sending response to client : %v", err)
+			err = stream.Send(
+				&rel.ReliabilityResponse{
+					DummyString: str,
+				},
+			)
+
+			if err != nil {
+				log.Fatalf("Error while sending response to client : %v", err)
+			}
 		}
 	}
 }

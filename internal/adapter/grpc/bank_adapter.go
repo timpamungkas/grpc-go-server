@@ -42,35 +42,46 @@ func (a *GrpcAdapter) GetCurrentBalance(
 
 func (a *GrpcAdapter) FetchExchangeRates(in *bank.ExchangeRateRequest,
 	stream bank.BankService_FetchExchangeRatesServer) error {
+	context := stream.Context()
+
 	for {
-		now := time.Now().Truncate(time.Second)
-		rate, err := a.bankService.FindExchangeRate(in.FromCurrency, in.ToCurrency, now)
+		select {
+		case <-context.Done():
+			log.Println("Client cancelled stream")
+			return nil
+		default:
+			now := time.Now().Truncate(time.Second)
+			rate, err := a.bankService.FindExchangeRate(in.FromCurrency, in.ToCurrency, now)
 
-		if err != nil {
-			s := status.New(codes.InvalidArgument,
-				"Currency not valid. Please pass valid currency for both from and to")
-			s, _ = s.WithDetails(&errdetails.ErrorInfo{
-				Domain: "my-bank-website.com",
-				Reason: "INVALID_CURRENCY",
-				Metadata: map[string]string{
-					"from_currency": in.FromCurrency,
-					"to_currency":   in.ToCurrency,
+			if err != nil {
+				s := status.New(codes.InvalidArgument,
+					"Currency not valid. Please pass valid currency for both from and to")
+				s, _ = s.WithDetails(&errdetails.ErrorInfo{
+					Domain: "my-bank-website.com",
+					Reason: "INVALID_CURRENCY",
+					Metadata: map[string]string{
+						"from_currency": in.FromCurrency,
+						"to_currency":   in.ToCurrency,
+					},
+				})
+
+				return s.Err()
+			}
+
+			stream.Send(
+				&bank.ExchangeRateResponse{
+					FromCurrency: in.FromCurrency,
+					ToCurrency:   in.ToCurrency,
+					Rate:         rate,
+					Timestamp:    now.Format(time.RFC3339),
 				},
-			})
+			)
 
-			return s.Err()
+			log.Printf("Exchange rate sent to client %v to %v : %v\n",
+				in.FromCurrency, in.ToCurrency, rate)
+
+			time.Sleep(3 * time.Second)
 		}
-
-		stream.Send(
-			&bank.ExchangeRateResponse{
-				FromCurrency: in.FromCurrency,
-				ToCurrency:   in.ToCurrency,
-				Rate:         rate,
-				Timestamp:    now.Format(time.RFC3339),
-			},
-		)
-
-		time.Sleep(3 * time.Second)
 	}
 }
 
@@ -203,51 +214,58 @@ func currentDatetime() *datetime.DateTime {
 }
 
 func (a *GrpcAdapter) TransferMultiple(stream bank.BankService_TransferMultipleServer) error {
+	context := stream.Context()
+
 	for {
-		req, err := stream.Recv()
-
-		if err == io.EOF {
+		select {
+		case <-context.Done():
+			log.Println("Client cancelled stream")
 			return nil
-		}
+		default:
+			req, err := stream.Recv()
 
-		if err != nil {
-			log.Fatalf("Error while reading from client : %v", err)
-		}
+			if err == io.EOF {
+				return nil
+			}
 
-		tt := dbank.TransferTransaction{
-			FromAccountNumber: req.FromAccountNumber,
-			ToAccountNumber:   req.ToAccountNumber,
-			Currency:          req.Currency,
-			Amount:            req.Amount,
-		}
+			if err != nil {
+				log.Fatalf("Error while reading from client : %v", err)
+			}
 
-		_, transferSuccess, err := a.bankService.Transfer(tt)
+			tt := dbank.TransferTransaction{
+				FromAccountNumber: req.FromAccountNumber,
+				ToAccountNumber:   req.ToAccountNumber,
+				Currency:          req.Currency,
+				Amount:            req.Amount,
+			}
 
-		if err != nil {
-			return buildTransferErrorStatusGrpc(err, *req)
-		}
+			_, transferSuccess, err := a.bankService.Transfer(tt)
 
-		res := bank.TransferResponse{
-			FromAccountNumber: req.FromAccountNumber,
-			ToAccountNumber:   req.ToAccountNumber,
-			Currency:          req.Currency,
-			Amount:            req.Amount,
-			Timestamp:         currentDatetime(),
-		}
+			if err != nil {
+				return buildTransferErrorStatusGrpc(err, *req)
+			}
 
-		if transferSuccess {
-			res.Status = bank.TransferStatus_TRANSFER_STATUS_SUCCESS
-		} else {
-			res.Status = bank.TransferStatus_TRANSFER_STATUS_FAILED
-		}
+			res := bank.TransferResponse{
+				FromAccountNumber: req.FromAccountNumber,
+				ToAccountNumber:   req.ToAccountNumber,
+				Currency:          req.Currency,
+				Amount:            req.Amount,
+				Timestamp:         currentDatetime(),
+			}
 
-		err = stream.Send(&res)
+			if transferSuccess {
+				res.Status = bank.TransferStatus_TRANSFER_STATUS_SUCCESS
+			} else {
+				res.Status = bank.TransferStatus_TRANSFER_STATUS_FAILED
+			}
 
-		if err != nil {
-			log.Fatalf("Error while sending response to client : %v", err)
+			err = stream.Send(&res)
+
+			if err != nil {
+				log.Fatalf("Error while sending response to client : %v", err)
+			}
 		}
 	}
-
 }
 
 func buildTransferErrorStatusGrpc(err error, req bank.TransferRequest) error {
